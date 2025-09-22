@@ -4,7 +4,8 @@ project(lvgl C CXX)
 # Set the correct FreeRTOS port for your system (e.g., Posix for WSL)
 set(FREERTOS_PORT GCC_POSIX CACHE STRING "Port for FreeRTOS on Posix environment")
 
-option(USE_FREERTOS "Enable FreeRTOS" OFF) # Turn this on to enable FreeRTOS
+# option(USE_FREERTOS "Enable FreeRTOS" OFF) # Turn this on to enable FreeRTOS
+option(USE_FREERTOS "Enable FreeRTOS" ON) # Turn this on to enable FreeRTOS
 
 if(USE_FREERTOS)
     message(STATUS "FreeRTOS is enabled")
@@ -75,6 +76,17 @@ if(USE_FREERTOS)
 else()
     list(APPEND MAIN_SOURCES src/main.c)
 endif()
+
+##############################################################################
+
+list(APPEND MAIN_SOURCES src/my_test.c)
+
+# 递归收集 src/my_page 目录下所有 .c 文件（包括子目录）
+file(GLOB_RECURSE MY_PAGES_SOURCES "src/my_pages/*.c")
+# 将收集到的 .c 文件添加到 MAIN_SOURCES 列表中
+list(APPEND MAIN_SOURCES ${MY_PAGES_SOURCES})
+
+##############################################################################
 
 
 if(NOT MSVC)

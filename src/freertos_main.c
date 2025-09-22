@@ -13,6 +13,15 @@
 #include "hal/hal.h"
 #include <stdio.h>
 
+#define SDL_MAIN_HANDLED
+#include <SDL2/SDL.h>
+
+#include "lvgl/examples/lv_examples.h"
+#include "lvgl/demos/lv_demos.h"
+
+#include "my_pages/my_page.h"
+#include "my_pages/touch_coord/touch_coord_monitor.h"
+
 // ........................................................................................................
 /**
  * @brief   Malloc failed hook
@@ -26,7 +35,8 @@
 void vApplicationMallocFailedHook(void)
 {
     printf("Malloc failed! Available heap: %ld bytes\n", xPortGetFreeHeapSize());
-    for( ;; );
+    for (;;)
+        ;
 }
 
 // ........................................................................................................
@@ -55,7 +65,8 @@ void vApplicationIdleHook(void) {}
 void vApplicationStackOverflowHook(TaskHandle_t xTask, char *pcTaskName)
 {
     printf("Stack overflow in task %s\n", pcTaskName);
-    for(;;);
+    for (;;)
+        ;
 }
 
 // ........................................................................................................
@@ -83,7 +94,8 @@ void create_hello_world_screen()
 {
     /* Create a new screen object */
     lv_obj_t *screen = lv_obj_create(NULL);
-    if (screen == NULL){
+    if (screen == NULL)
+    {
         printf("Error: Failed to create screen object\n");
         /* Return if screen creation fails */
         return;
@@ -91,7 +103,8 @@ void create_hello_world_screen()
 
     /* Create a new label object on the screen */
     lv_obj_t *label = lv_label_create(screen);
-    if (label == NULL){
+    if (label == NULL)
+    {
         printf("Error: Failed to create label object\n");
         /* Return if label creation fails */
         return;
@@ -124,12 +137,35 @@ void lvgl_task(void *pvParameters)
     lv_init();
 
     /*Initialize the HAL (display, input devices, tick) for LVGL*/
-    sdl_hal_init(320, 480);
-    /* Show simple hello world screen */
-    create_hello_world_screen();
+    // sdl_hal_init(502, 410);
+    lv_display_t *disp = sdl_hal_init(502, 410);
+    // lv_sdl_window_set_zoom(disp, 0.28);
+    lv_sdl_window_set_zoom(disp, 1);
 
-    while (true){
-        lv_timer_handler(); /* Handle LVGL tasks */
+    /* Show simple hello world screen */
+    // create_hello_world_screen();
+
+    // lv_demo_widgets();
+
+    my_pages_test();
+
+    // 最上层添加带圆角矩形蒙版，内部透明圆角不透明
+    lv_obj_t *mask = lv_obj_create(lv_scr_act());
+    lv_obj_set_size(mask, 502, 410);
+    lv_obj_set_align(mask, LV_ALIGN_CENTER);
+    lv_obj_set_style_radius(mask, 50, 0);
+    lv_obj_set_style_bg_color(mask, lv_color_black(), 0);
+    lv_obj_set_style_bg_opa(mask, LV_OPA_0, 0);
+
+    // 核心设置：移除点击标志，让事件穿透到下层
+    lv_obj_clear_flag(mask, LV_OBJ_FLAG_CLICKABLE);  // 禁用自身交互
+    lv_obj_clear_flag(mask, LV_OBJ_FLAG_SCROLLABLE); // 确保不会影响滚动
+
+    touch_coord_monitor_create();
+
+    while (true)
+    {
+        lv_timer_handler();           /* Handle LVGL tasks */
         vTaskDelay(pdMS_TO_TICKS(5)); /* Short delay for the RTOS scheduler */
     }
 }
@@ -146,7 +182,8 @@ void lvgl_task(void *pvParameters)
 void another_task(void *pvParameters)
 {
     /* Create some load in an infinite loop */
-    while (true){
+    while (true)
+    {
         printf("Second Task is running :)\n");
         /* Delay the task for 500 milliseconds */
         vTaskDelay(pdMS_TO_TICKS(500));
@@ -169,13 +206,15 @@ int main(int argc, char **argv)
     /* Initialize LVGL (Light and Versatile Graphics Library) and other resources */
 
     /* Create the LVGL task */
-    if (xTaskCreate(lvgl_task, "LVGL Task", 4096, NULL, 1, NULL) != pdPASS) {
+    if (xTaskCreate(lvgl_task, "LVGL Task", 4096, NULL, 1, NULL) != pdPASS)
+    {
         printf("Error creating LVGL task\n");
         /* Error handling */
     }
 
     /* Create another task */
-    if (xTaskCreate(another_task, "Another Task", 1024, NULL, 1, NULL) != pdPASS) {
+    if (xTaskCreate(another_task, "Another Task", 1024, NULL, 1, NULL) != pdPASS)
+    {
         printf("Error creating another task\n");
         /* Error handling */
     }
